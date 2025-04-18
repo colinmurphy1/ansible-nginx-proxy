@@ -1,0 +1,60 @@
+---
+
+- name: Include OS-specific vars
+  ansible.builtin.include_vars: "{{ ansible_os_family }}.yml"
+
+- name: Install nginx
+  ansible.builtin.package:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ nginx_packages }}"
+
+# TODO - GET RID OF THIS
+- name: Get nginx version
+  ansible.builtin.shell:
+    cmd: |
+      set -o pipefail
+      nginx -v 2>&1 | cut -d'/' -f2
+    executable: /bin/bash
+  register: nginx_version
+  changed_when: false # should never report changes
+
+- name: Check if dhparam file exists
+  ansible.builtin.stat:
+    path: "{{ nginx_dhparam_path }}"
+  register: dhparam_stat
+
+- name: Generate dhparams
+  community.crypto.openssl_dhparam:
+    path: "{{ nginx_dhparam_path }}"
+    size: "{{ nginx_dhparam_size }}"
+  when: not dhparam_stat.stat.exists
+  notify: Restart nginx
+
+- name: Generate nginx.conf
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/nginx.conf
+    mode: '0644'
+    owner: root
+    group: root
+  notify: Restart nginx
+
+- name: Generate vhost configuration files
+  ansible.builtin.template:
+    src: vhost.j2
+    dest: "/etc/nginx/conf.d/{{ item.name }}.conf"
+    mode: '0644'
+    owner: root
+    group: root
+  # This will generate a single configuration file for each interface
+  with_items: "{{ nginx_proxies }}"
+  notify: Restart nginx
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Configure nginx service
+  ansible.builtin.service:
+    name: nginx
+    state: "{{ nginx_service_state }}"
+    enabled: "{{ nginx_service_enabled }}"

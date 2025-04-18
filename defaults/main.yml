@@ -1,0 +1,25 @@
+---
+# defaults file for cmurphy.nginx-proxy
+
+# packages to Install
+nginx_packages:
+  - nginx
+
+# service configuration
+nginx_service_state: started
+nginx_service_enabled: true
+
+# Number of worker connections
+nginx_worker_connections: 1024
+
+# dhparam
+nginx_dhparam_path: /etc/nginx/dhparam.pem
+nginx_dhparam_size: 2048
+
+# Default cert
+nginx_default_cert: "/etc/ssl/certs/ssl-cert-snakeoil.pem"
+nginx_default_cert_key: "/etc/ssl/private/ssl-cert-snakeoil.key"
+
+# Default ports
+nginx_port_http: 80
+nginx_port_https: 443
