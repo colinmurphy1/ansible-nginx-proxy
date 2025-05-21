@@ -19,7 +19,6 @@ server {
     listen [::]:{{ item.https_port | default(nginx_port_https) }} ssl{% if http2_directive is false%} http2{% endif %} default_server;
     server_name _;
 
-    # SSL configuration begin
     ssl_certificate {{ item.cert_path | default(nginx_default_cert) }};
     ssl_certificate_key {{ item.cert_key_path | default(nginx_default_cert_key) }};
     ssl_session_timeout 1d;
@@ -49,7 +48,6 @@ server {
     listen {{ item.listen_port | default(443) }} ssl{% if http2_directive is false%} http2{% endif %};
     listen [::]:{{ item.listen_port | default(443) }} ssl{% if http2_directive is false%} http2{% endif %};
 
-    # SSL configuration begin
     ssl_certificate {{ item.cert_path | default(nginx_default_cert) }};
     ssl_certificate_key {{ item.cert_key_path | default(nginx_default_cert_key) }};
     ssl_session_timeout 1d;
