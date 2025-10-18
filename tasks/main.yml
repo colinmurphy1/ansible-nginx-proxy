@@ -2,6 +2,8 @@
 
 - name: Include OS-specific vars
   ansible.builtin.include_vars: "{{ ansible_os_family }}.yml"
+  when:
+    - ansible_os_family is in ('Debian')
 
 - name: Install nginx
   ansible.builtin.package:
@@ -24,6 +26,7 @@
     path: "{{ nginx_dhparam_path }}"
   register: dhparam_stat
 
+# dpharams are only used when modern_ssl is set to 'intermediate', but will always be generated
 - name: Generate dhparams
   community.crypto.openssl_dhparam:
     path: "{{ nginx_dhparam_path }}"
@@ -31,13 +34,15 @@
   when: not dhparam_stat.stat.exists
   notify: Restart nginx
 
-- name: Generate nginx.conf
-  ansible.builtin.template:
-    src: nginx.conf.j2
-    dest: /etc/nginx/nginx.conf
-    mode: '0644'
-    owner: root
-    group: root
+# Debian-based distros come with a default vhost that we don't want
+- name: Delete default vhost files
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/nginx/sites-enabled/default
+    - /etc/nginx/sites-available/default
+  when: ansible_os_family == 'Debian'
   notify: Restart nginx
 
 - name: Generate vhost configuration files
@@ -47,7 +52,7 @@
     mode: '0644'
     owner: root
     group: root
-  # This will generate a single configuration file for each interface
+  # This will generate a single configuration file for each vhost
   with_items: "{{ nginx_proxies }}"
   notify: Restart nginx
   loop_control:
