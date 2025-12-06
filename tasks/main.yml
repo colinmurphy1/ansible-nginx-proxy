@@ -1,9 +1,9 @@
 ---
 
 - name: Include OS-specific vars
-  ansible.builtin.include_vars: "{{ ansible_os_family }}.yml"
+  ansible.builtin.include_vars: "{{ ansible_facts['os_family'] }}.yml"
   when:
-    - ansible_os_family is in ('Debian')
+    - ansible_facts['os_family'] is in ('Debian')
 
 - name: Install nginx
   ansible.builtin.package:
@@ -42,7 +42,7 @@
   loop:
     - /etc/nginx/sites-enabled/default
     - /etc/nginx/sites-available/default
-  when: ansible_os_family == 'Debian'
+  when: ansible_facts['os_family'] == 'Debian'
   notify: Restart nginx
 
 - name: Generate vhost configuration files
